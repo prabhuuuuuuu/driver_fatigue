@@ -1,0 +1,259 @@
+# enhanced_config.yaml
+# Detection parameters - optimized for comprehensive fatigue detection
+detection:
+  # Eye drowsiness detection
+  ear_threshold: 0.25              # Eye Aspect Ratio threshold
+  fatigue_threshold: 15            # Consecutive frames for drowsiness (optimized)
+  confidence_threshold: 0.65       # Balanced confidence for glasses compatibility
+  frame_skip: 1                    # Process every frame for better accuracy
+  
+  # Temporal filtering for blink vs drowsiness distinction
+  blink_duration_max: 8            # Normal blinks last max 8 frames (~0.27s @ 30fps)
+  drowsy_duration_min: 12          # Drowsiness lasts minimum 12 frames (~0.4s)
+  recovery_frames: 5               # Frames of "alert" needed to reset counter
+  
+  # NEW: Yawning detection parameters
+  yawning:
+    mar_threshold: 0.60            # Mouth Aspect Ratio threshold for yawning
+    yawn_frames_threshold: 8       # Consecutive frames to confirm yawn
+    yawn_duration_min: 1.0         # Minimum yawn duration in seconds
+    yawn_duration_max: 4.0         # Maximum valid yawn duration
+    yawn_recovery_frames: 5        # Frames to reset yawn counter
+    
+    # Temporal yawn analysis
+    yawn_history_length: 30        # Frames to keep in MAR history
+    yawn_pattern_validation: true  # Enable pattern validation (increase->peak->decrease)
+    yawn_timestamp_window: 60      # Seconds to track yawn frequency
+    
+  # NEW: Glasses compatibility settings
+  glasses_support:
+    enabled: true
+    preprocessing:
+      clahe_enabled: true
+      clahe_clip_limit: 2.0
+      clahe_tile_size: [8, 8]
+      bilateral_filter: true
+      bilateral_d: 9
+      bilateral_sigma_color: 75
+      bilateral_sigma_space: 75
+      gaussian_blur_kernel: [3, 3]
+    
+    # Adaptive confidence weighting
+    low_confidence_threshold: 0.7  # Below this, prioritize EAR over CNN
+    ear_weight_high_conf: 0.4      # EAR weight when CNN confidence is high
+    ear_weight_low_conf: 0.7       # EAR weight when CNN confidence is low
+    
+    # Multiple detection attempts
+    multi_scale_detection: true
+    fallback_to_original: true     # Try original image if enhanced fails
+  
+  # Fatigue level classification
+  fatigue_levels:
+    alert_yawns_per_minute: 0
+    early_fatigue_yawns_per_minute: 1
+    severe_fatigue_yawns_per_minute: 2
+    combined_detection: true       # Use both eye closure and yawning
+
+# Dataset configuration - expanded for yawning datasets
+datasets:
+  # Eye datasets
+  mrl_eye: "data/raw/MRL_Eye_Dataset"
+  nthu_ddd: "data/raw/NTHU_DDD_Dataset" 
+  cew: "data/raw/CEW_Dataset"
+  
+  # Yawning datasets
+  yawdd: "data/raw/YawDD_Dataset"
+  omg_emotion: "data/raw/OMG_Emotion_Dataset"  # For yawn expressions
+  
+  # Combined fatigue datasets
+  uta_rldd: "data/raw/UTA_RLDD_Dataset"        # Real-life drowsiness
+  
+  # Glasses-specific datasets (if available)
+  glasses_augmented: "data/processed/glasses_augmented"
+
+# Data preprocessing - enhanced for multi-modal detection
+preprocessing:
+  # Eye region preprocessing
+  eye_region:
+    target_size: [64, 64]
+    grayscale: true
+    normalize: true
+    clahe_preprocessing: true
+    
+  # Mouth region preprocessing (for yawning)
+  mouth_region:
+    target_size: [64, 48]          # Wider aspect ratio for mouth
+    grayscale: true
+    normalize: true
+    
+  # Data splits
+  validation_split: 0.2
+  test_split: 0.1
+  
+  # Augmentation strategies
+  augmentation:
+    enabled: true
+    rotation_range: 10
+    width_shift_range: 0.1
+    height_shift_range: 0.1
+    brightness_range: [0.8, 1.2]   # Important for glasses reflection handling
+    contrast_range: [0.8, 1.2]
+    gaussian_noise: 0.01
+    
+    # Glasses-specific augmentations
+    reflection_simulation: true     # Simulate glasses reflections
+    blur_simulation: true          # Simulate motion blur
+
+# Model configuration - multi-modal architecture
+model:
+  # Primary eye drowsiness model
+  eye_model:
+    architecture: "lightweight_cnn"
+    input_shape: [64, 64, 1]
+    num_classes: 2
+    dropout_rate: 0.4              # Reduced for better glasses generalization
+    
+  # Yawning detection model (if using CNN for yawning)
+  yawn_model:
+    architecture: "mouth_cnn"      # Specialized for mouth region
+    input_shape: [64, 48, 1]
+    num_classes: 2
+    dropout_rate: 0.3
+    
+  # Fusion strategy
+  fusion:
+    method: "weighted_average"     # Options: weighted_average, lstm, attention
+    eye_weight: 0.6
+    yawn_weight: 0.4
+
+# Training parameters - optimized for robustness
+training:
+  batch_size: 32
+  epochs: 60                       # Increased for better convergence
+  learning_rate: 0.0008           # Slightly reduced for stability
+  patience: 12                     # Increased patience
+  
+  # Learning rate scheduling
+  lr_schedule:
+    enabled: true
+    factor: 0.5
+    patience: 8
+    min_lr: 0.00001
+    
+  # Loss weighting for imbalanced data
+  class_weights:
+    eye_closed: 1.2                # Slightly higher weight for closed eyes
+    eye_open: 1.0
+    yawning: 1.5                   # Higher weight for yawning (rarer class)
+    not_yawning: 1.0
+    
+  # Callbacks
+  callbacks:
+    early_stopping: true
+    model_checkpoint: true
+    reduce_lr_on_plateau: true
+    tensorboard: true
+
+# Hardware-specific configurations
+hardware:
+  # Raspberry Pi settings
+  raspberry_pi:
+    buzzer_pin: 18
+    led_pin: 24
+    camera_index: 0
+    display_fps: true
+    gpio_cleanup: true
+    
+    # Performance optimizations
+    cpu_optimization: true
+    memory_limit: 512              # MB
+    thread_count: 2                # Limit threads for Pi
+    
+  # General camera settings
+  camera:
+    width: 640
+    height: 480
+    fps: 30
+    auto_exposure: true
+    auto_white_balance: true
+    brightness: 50                 # Balanced for glasses
+    contrast: 50
+    
+  # Performance monitoring
+  performance:
+    target_fps: 25                 # Realistic target for Pi
+    max_processing_time: 0.04      # 40ms max per frame
+    memory_monitoring: true
+    cpu_monitoring: true
+
+# Alerting system - multi-level alerts
+alerts:
+  # Visual alerts
+  visual:
+    enabled: true
+    drowsy_color: [0, 165, 255]    # Orange
+    severe_color: [0, 0, 255]      # Red
+    yawn_color: [0, 255, 255]      # Yellow
+    alert_color: [0, 255, 0]       # Green
+    
+  # Audio alerts
+  audio:
+    enabled: true
+    early_fatigue_sound: "sounds/early_warning.wav"
+    severe_fatigue_sound: "sounds/severe_warning.wav"
+    yawn_sound: "sounds/yawn_detected.wav"
+    
+  # System alerts
+  system:
+    log_detections: true
+    save_alert_frames: true
+    alert_frame_path: "alerts/frames/"
+    
+  # Alert thresholds
+  thresholds:
+    early_warning: "EARLY_FATIGUE"
+    severe_warning: "FATIGUED"
+    emergency_stop: false          # Don't automatically stop vehicle
+
+# Logging and monitoring
+logging:
+  level: "INFO"
+  file: "logs/fatigue_detection.log"
+  max_size: "10MB"
+  backup_count: 5
+  
+  # Metrics to log
+  metrics:
+    - detection_accuracy
+    - processing_time
+    - fps
+    - false_positive_rate
+    - yawn_detection_rate
+    - glasses_detection_confidence
+
+# Development and debugging
+debug:
+  enabled: false
+  save_processed_frames: false
+  show_landmarks: true
+  show_detection_regions: true
+  print_detailed_metrics: false
+  
+  # Testing modes
+  test_mode:
+    enabled: false
+    test_video_path: "test_videos/"
+    ground_truth_path: "test_videos/annotations/"
+
+# Model versioning and updates
+model_management:
+  version: "2.1.0"
+  auto_update: false
+  model_registry: "models/"
+  backup_models: true
+  
+  # A/B testing
+  ab_testing:
+    enabled: false
+    model_a_weight: 0.5
+    model_b_weight: 0.5

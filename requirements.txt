@@ -1,0 +1,29 @@
+# TensorFlow - Latest stable version
+tensorflow>=2.19.0,<2.20.0
+
+# Computer Vision
+opencv-python>=4.8.0
+Pillow>=10.0.0
+
+# Data Science and ML
+numpy>=1.24.0,<2.1.0  # Compatible with both NumPy 1.26 and 2.0
+scikit-learn>=1.3.0
+pandas>=2.0.0
+
+# Visualization
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# Configuration and Utils
+PyYAML>=6.0.1
+tqdm>=4.65.0
+
+# Development and Jupyter
+jupyter>=1.0.0
+ipykernel>=6.25.0
+
+# For model conversion and optimization
+tf2onnx>=1.15.0
+
+# Additional utilities
+psutil>=5.9.0  # For system monitoring

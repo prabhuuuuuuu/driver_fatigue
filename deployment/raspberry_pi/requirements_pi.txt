@@ -1,0 +1,22 @@
+# TensorFlow Lite Runtime - Latest version
+tensorflow>=2.19.0,<2.20.0
+
+# Alternative lightweight option for Pi
+# tensorflow-cpu>=2.19.0,<2.20.0
+
+# Computer Vision (optimized for Pi)
+opencv-python-headless>=4.8.0  # Headless version for better Pi performance
+
+# Core dependencies
+numpy>=1.24.0,<2.1.0
+PyYAML>=6.0.1
+
+# Raspberry Pi specific
+RPi.GPIO>=0.7.1
+picamera2>=0.3.12  # Updated Pi camera library
+
+# System monitoring
+psutil>=5.9.0
+
+# Optional: For advanced Pi features
+gpiozero>=1.6.2
